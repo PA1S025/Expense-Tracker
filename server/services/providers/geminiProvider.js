@@ -5,13 +5,28 @@ const getGeminiConfig = () => ({
 
 
 const toGeminiSchema = (schema = {}) => {
-  const {
-    $schema,
-    additionalProperties,
-    ...cleanSchema
-  } = schema
+  if (Array.isArray(schema)) {
+    return schema.map(toGeminiSchema)
+  }
 
-  return cleanSchema
+  if (!schema || typeof schema !== 'object') {
+    return schema
+  }
+
+  const unsupportedKeys = new Set([
+    '$schema',
+    'additionalProperties',
+    'exclusiveMaximum',
+    'exclusiveMinimum'
+  ])
+
+  return Object.entries(schema).reduce((cleanSchema, [key, value]) => {
+    if (!unsupportedKeys.has(key)) {
+      cleanSchema[key] = toGeminiSchema(value)
+    }
+
+    return cleanSchema
+  }, {})
 }
 
 
@@ -37,14 +52,20 @@ const convertMessages = (messages = []) => messages
       }
 
       for (const toolCall of message.tool_calls || []) {
-        parts.push({
+        const functionCallPart = {
           functionCall: {
             name: toolCall.function.name,
             args: typeof toolCall.function.arguments === 'string'
               ? JSON.parse(toolCall.function.arguments)
               : toolCall.function.arguments
           }
-        })
+        }
+
+        if (toolCall.thoughtSignature) {
+          functionCallPart.thoughtSignature = toolCall.thoughtSignature
+        }
+
+        parts.push(functionCallPart)
       }
 
       return {
@@ -59,6 +80,10 @@ const convertMessages = (messages = []) => messages
       try {
         response = JSON.parse(response)
       } catch {
+        response = { result: response }
+      }
+
+      if (!response || typeof response !== 'object' || Array.isArray(response)) {
         response = { result: response }
       }
 
@@ -88,28 +113,44 @@ const generate = async ({ messages, tools }) => {
   }
 
   const systemMessage = messages.find((message) => message.role === 'system')
+  const geminiTools = convertTools(tools)
+  const requestBody = {
+    systemInstruction: systemMessage
+      ? { parts: [{ text: systemMessage.content }] }
+      : undefined,
+    contents: convertMessages(messages)
+  }
+
+  if (geminiTools[0]?.functionDeclarations?.length) {
+    requestBody.tools = geminiTools
+    requestBody.toolConfig = {
+      functionCallingConfig: {
+        mode: 'AUTO'
+      }
+    }
+  }
+
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      systemInstruction: systemMessage
-        ? { parts: [{ text: systemMessage.content }] }
-        : undefined,
-      contents: convertMessages(messages),
-      tools: convertTools(tools),
-      toolConfig: {
-        functionCallingConfig: {
-          mode: 'AUTO'
-        }
-      }
-    })
+    body: JSON.stringify(requestBody)
   })
 
   if (!response.ok) {
-    throw new Error(`Gemini request failed (${response.status})`)
+    const errorBody = await response.text()
+    let errorMessage = `Gemini request failed (${response.status})`
+
+    try {
+      const parsedError = JSON.parse(errorBody)
+      errorMessage = parsedError.error?.message || errorMessage
+    } catch {
+      // Keep the status when the provider does not return JSON.
+    }
+
+    throw new Error(errorMessage)
   }
 
   const data = await response.json()
@@ -123,7 +164,8 @@ const generate = async ({ messages, tools }) => {
     .map((part, index) => ({
       id: `gemini-call-${Date.now()}-${index}`,
       name: part.functionCall.name,
-      arguments: part.functionCall.args || {}
+      arguments: part.functionCall.args || {},
+      thoughtSignature: part.thoughtSignature
     }))
 
   return {

@@ -27,10 +27,6 @@ const aiRoutes =
 const authenticateToken =
   require('./middleware/authMiddleware')
 
-const processRecurringExpenses =
-  require('./recurringProcessor')
-
-
 const app = express()
 
 
@@ -187,17 +183,6 @@ const startServer = async () => {
         )
 
       }
-    )
-
-
-    // Process recurring expenses
-    await processRecurringExpenses()
-
-
-    // Check every 60 seconds
-    setInterval(
-      processRecurringExpenses,
-      60 * 1000
     )
 
 

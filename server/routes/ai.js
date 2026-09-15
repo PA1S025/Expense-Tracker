@@ -30,6 +30,10 @@ const getPublicErrorMessage = (error) => {
     return message
   }
 
+  if (message.includes('quota') || message.includes('rate limit') || message.includes('free_tier')) {
+    return 'Gemini API quota exceeded. Please wait for the quota to reset or check your Google AI Studio billing and limits.'
+  }
+
   return 'AI request failed. Please try again.'
 }
 

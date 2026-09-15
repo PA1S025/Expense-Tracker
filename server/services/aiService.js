@@ -186,6 +186,7 @@ const generateAIResponse = async ({
 
     const assistantToolCalls = result.toolCalls.map((toolCall) => ({
       id: toolCall.id,
+      thoughtSignature: toolCall.thoughtSignature,
       function: {
         name: toolCall.name,
         arguments: toolCall.arguments
