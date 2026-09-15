@@ -376,11 +376,6 @@ function App() {
 
 
   useEffect(() => {
-    localStorage.removeItem('pinHash')
-  }, [])
-
-
-  useEffect(() => {
 
     document.documentElement.dataset.theme =
       theme
@@ -890,7 +885,7 @@ function App() {
           <div className="sidebar-footer">
             <div className="sidebar-user">
               <div className="sidebar-user-avatar">
-                {user.name
+                {user?.name
                   ? user.name
                       .split(' ')
                       .slice(0, 2)
@@ -900,8 +895,8 @@ function App() {
                   : 'U'}
               </div>
               <div>
-                <strong>{user.name || 'User'}</strong>
-                <span>{user.email || 'Account'}</span>
+                <strong>{user?.name || 'User'}</strong>
+                <span>{user?.email || 'Account'}</span>
               </div>
             </div>
 
@@ -931,11 +926,11 @@ function App() {
           <div className="page-hero-aside">
             <div className="hero-chip">
               <span>Account</span>
-              <strong>{user.name || 'User'}</strong>
+              <strong>{user?.name || 'User'}</strong>
             </div>
             <div className="hero-chip">
               <span>Email</span>
-              <strong>{user.email || 'Not available'}</strong>
+              <strong>{user?.email || 'Not available'}</strong>
             </div>
           </div>
         </div>
