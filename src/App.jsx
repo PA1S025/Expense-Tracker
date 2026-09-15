@@ -727,7 +727,9 @@ function App() {
     : currentHour < 18
       ? 'Good afternoon'
       : 'Good evening'
-  const firstName = user.name ? user.name.split(' ')[0] : 'there'
+  const firstName = user?.name
+    ? user.name.split(' ')[0]
+    : 'there'
 
   const viewCopy = {
     overview: {
