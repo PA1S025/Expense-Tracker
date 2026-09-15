@@ -2016,10 +2016,23 @@ input::placeholder, textarea::placeholder {
 .remember-me {
   display: flex;
   align-items: center;
-  gap: 6px;
+  width: max-content;
+  gap: 8px;
   font-size: 12px;
+  line-height: 1.2;
   color: var(--secondary-text);
   margin-top: 10px;
+  cursor: pointer;
+}
+
+.remember-me input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--primary-blue);
+  cursor: pointer;
 }
 
 .lock-screen {
