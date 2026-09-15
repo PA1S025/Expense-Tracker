@@ -130,7 +130,7 @@ function ExpenseList({
       <div className="expense-grid">
         {visibleExpenses.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">💸</div>
+            <div className="empty-icon" aria-hidden="true">◇</div>
             <h3>No expenses found</h3>
             <p>Try changing your filters or add a new expense.</p>
           </div>
@@ -188,8 +188,8 @@ function ExpenseList({
                 {expense.notes && <p className="expense-note"><b>Notes:</b> {expense.notes}</p>}
                 {expense.recurringId && <span className="recurring-tag">↻ Recurring</span>}
                 <div className="card-actions">
-                  <button className="danger-button" onClick={() => deleteExpense(expense.id)}>Delete</button>
-                  <button className="secondary-button" onClick={() => setEditingId(expense.id)}>Edit</button>
+                  <button className="danger-button small" onClick={() => deleteExpense(expense.id)}>Delete</button>
+                  <button className="secondary-button small" onClick={() => setEditingId(expense.id)}>Edit</button>
                 </div>
               </>
             )}

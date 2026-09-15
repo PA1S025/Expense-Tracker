@@ -496,156 +496,80 @@ function RecurringExpenses({
       </div>
 
 
-      <form
-        className="form-grid"
-        onSubmit={
-          handleAddRecurring
-        }
-      >
-
+      <form className="form-grid" onSubmit={handleAddRecurring}>
         <div className="field">
-
-          <label>
-            Amount
+          <label className="field-label">
+            <span>Amount</span>
+            <span className="field-required">*</span>
           </label>
-
-          <input
-            type="number"
-            min="0.01"
-            step="0.01"
-            placeholder="Enter amount"
-            value={amount}
-            onChange={(e) =>
-              setAmount(
-                e.target.value
-              )
-            }
-          />
-
+          <div className="input-group">
+            <span className="input-prefix">₹</span>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </div>
         </div>
 
-
         <div className="field">
-
-          <label>
-            Category
+          <label className="field-label">
+            <span>Category</span>
+            <span className="field-required">*</span>
           </label>
-
-          <select
-            value={category}
-            onChange={(e) =>
-              setCategory(
-                e.target.value
-              )
-            }
-          >
-
-            <option value="">
-              Select category
-            </option>
-
-            {categories.map(
-              (item) => (
-
-                <option
-                  key={item}
-                  value={item}
-                >
-                  {item}
-                </option>
-
-              )
-            )}
-
+          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+            <option value="">Select category</option>
+            {categories.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
           </select>
-
         </div>
 
-
         <div className="field">
-
-          <label>
-            Description
+          <label className="field-label">
+            <span>Description</span>
+            <span className="field-required">*</span>
           </label>
-
           <input
             placeholder="Example: Room rent"
             value={description}
-            onChange={(e) =>
-              setDescription(
-                e.target.value
-              )
-            }
+            onChange={(e) => setDescription(e.target.value)}
           />
-
         </div>
 
-
         <div className="field">
-
-          <label>
-            Start Date
+          <label className="field-label">
+            <span>Start Date</span>
+            <span className="field-required">*</span>
           </label>
-
           <input
             type="date"
             value={startDate}
-            onChange={(e) =>
-              setStartDate(
-                e.target.value
-              )
-            }
+            onChange={(e) => setStartDate(e.target.value)}
           />
-
         </div>
-
 
         <div className="field">
-
-          <label>
-            Frequency
+          <label className="field-label">
+            <span>Frequency</span>
           </label>
-
-          <select
-            value={frequency}
-            onChange={(e) =>
-              setFrequency(
-                e.target.value
-              )
-            }
-          >
-
-            <option value="monthly">
-              Monthly
-            </option>
-
-            <option value="weekly">
-              Weekly
-            </option>
-
-            <option value="yearly">
-              Yearly
-            </option>
-
+          <select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="yearly">Yearly</option>
           </select>
-
         </div>
 
-
-        <div className="field field-full">
-
-          <button
-            className="primary-button"
-            type="submit"
-            disabled={saving}
-          >
-            {saving
-              ? 'Saving...'
-              : 'Add Recurring Expense'}
+        <div className="field field-full" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+          <button className="primary-button" type="submit" disabled={saving}>
+            <span>+</span> {saving ? 'Saving...' : 'Add Recurring Expense'}
           </button>
-
         </div>
-
       </form>
 
 

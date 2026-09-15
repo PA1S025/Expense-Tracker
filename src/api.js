@@ -359,3 +359,29 @@ export const logoutUser =
       'user'
     )
   }
+
+  /*
+  -----------------------------------------
+  AI / MCP
+  -----------------------------------------
+*/
+
+export const sendAIMessage =
+  async (
+    message,
+    context = {}
+  ) => {
+
+    return request(
+      '/ai/chat',
+      {
+        method: 'POST',
+
+        body: JSON.stringify({
+          message,
+          context
+        })
+      }
+    )
+
+  }

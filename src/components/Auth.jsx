@@ -111,11 +111,11 @@ function Auth({ onLogin }) {
           </p>
 
           <div className="auth-metrics">
-            <div>
+            <div className="auth-metric">
               <strong>₹28.4K</strong>
               <span>Monthly spending</span>
             </div>
-            <div>
+            <div className="auth-metric">
               <strong>86%</strong>
               <span>Budget used</span>
             </div>

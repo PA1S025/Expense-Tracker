@@ -13,6 +13,7 @@ import Notifications from './components/Notifications'
 import Settings from './components/Settings'
 import PinLock from './components/PinLock'
 import Auth from './components/Auth'
+import AIChat from './components/AIChat'
 
 import {
   getExpenses,
@@ -23,8 +24,7 @@ import {
 } from './api'
 
 import {
-  DEFAULT_CATEGORIES,
-  hashPin
+  DEFAULT_CATEGORIES
 } from './utils'
 
 import './App.css'
@@ -103,34 +103,13 @@ function App() {
 
 
   const [pinEnabled, setPinEnabled] =
-    useState(
-      () =>
-        Boolean(
-          localStorage.getItem(
-            'pinHash'
-          )
-        )
-    )
-
+    useState(() => Boolean(localStorage.getItem('pinHash')))
 
   const [pinHashValue, setPinHashValue] =
-    useState(
-      () =>
-        localStorage.getItem(
-          'pinHash'
-        ) || ''
-    )
-
+    useState(() => localStorage.getItem('pinHash') || '')
 
   const [locked, setLocked] =
-    useState(
-      () =>
-        Boolean(
-          localStorage.getItem(
-            'pinHash'
-          )
-        )
-    )
+    useState(() => Boolean(localStorage.getItem('pinHash')))
 
 
   const [theme, setTheme] =
@@ -139,6 +118,18 @@ function App() {
         localStorage.getItem(
           'theme'
         ) || 'system'
+    )
+
+  const [navTheme, setNavTheme] =
+    useState(
+      () =>
+        localStorage.getItem('navTheme') || 'rail'
+    )
+
+  const [motionTheme, setMotionTheme] =
+    useState(
+      () =>
+        localStorage.getItem('motionTheme') || 'rise'
     )
 
 
@@ -171,6 +162,9 @@ function App() {
 
   const [budgetDraft, setBudgetDraft] =
     useState('')
+
+  const [aiOpen, setAiOpen] =
+    useState(false)
 
 
   /*
@@ -363,21 +357,27 @@ function App() {
     )
   }, [theme])
 
+  useEffect(() => {
+    localStorage.setItem('navTheme', navTheme)
+  }, [navTheme])
 
   useEffect(() => {
+    localStorage.setItem('motionTheme', motionTheme)
+  }, [motionTheme])
 
+
+  useEffect(() => {
     if (pinHashValue) {
-      localStorage.setItem(
-        'pinHash',
-        pinHashValue
-      )
+      localStorage.setItem('pinHash', pinHashValue)
     } else {
-      localStorage.removeItem(
-        'pinHash'
-      )
+      localStorage.removeItem('pinHash')
     }
-
   }, [pinHashValue])
+
+
+  useEffect(() => {
+    localStorage.removeItem('pinHash')
+  }, [])
 
 
   useEffect(() => {
@@ -721,6 +721,70 @@ function App() {
     -----------------------------------------
   */
 
+  const currentHour = new Date().getHours()
+  const greeting = currentHour < 12
+    ? 'Good morning'
+    : currentHour < 18
+      ? 'Good afternoon'
+      : 'Good evening'
+  const firstName = user.name ? user.name.split(' ')[0] : 'there'
+
+  const viewCopy = {
+    overview: {
+      kicker: 'Spending overview',
+      title: `${greeting}, ${firstName}`,
+      subtitle: 'A calm snapshot of where your money went.'
+    },
+    'add-expense': {
+      kicker: 'Capture',
+      title: 'Add an expense',
+      subtitle: 'Log a purchase and set this month’s budget target.'
+    },
+    analytics: {
+      kicker: 'Insights',
+      title: 'Spending analytics',
+      subtitle: 'See patterns, categories, and how you track against budget.'
+    },
+    calendar: {
+      kicker: 'Timeline',
+      title: 'Calendar',
+      subtitle: 'Browse expenses and recurring dues by day.'
+    },
+    recurring: {
+      kicker: 'Automation',
+      title: 'Recurring expenses',
+      subtitle: 'Keep bills and subscriptions on a reliable schedule.'
+    },
+    notifications: {
+      kicker: 'Alerts',
+      title: 'Notifications',
+      subtitle: 'Budget warnings and reminders, all in one place.'
+    },
+    settings: {
+      kicker: 'Preferences',
+      title: 'Settings',
+      subtitle: 'Tune appearance, navigation, motion, and data tools.'
+    }
+  }[activeView]
+
+
+  const overviewTotalSpent = useMemo(
+    () => filteredExpenses.reduce((sum, e) => sum + Number(e.amount), 0),
+    [filteredExpenses]
+  )
+
+  const overviewBudget = Number(currentBudget) || 0
+  const overviewRemaining = overviewBudget - overviewTotalSpent
+
+  const overviewTopCategory = useMemo(() => {
+    const totals = {}
+    filteredExpenses.forEach((e) => {
+      totals[e.category] = (totals[e.category] || 0) + Number(e.amount)
+    })
+    const entries = Object.entries(totals).sort((a, b) => b[1] - a[1])
+    return entries[0]?.[0] || 'N/A'
+  }, [filteredExpenses])
+
   if (!user) {
 
     if (loading) {
@@ -740,21 +804,9 @@ function App() {
     )
   }
 
-
   if (locked) {
-
-    return (
-      <PinLock
-        pinHash={
-          pinHashValue
-        }
-        onUnlock={() =>
-          setLocked(false)
-        }
-      />
-    )
+    return <PinLock pinHash={pinHashValue} onUnlock={() => setLocked(false)} />
   }
-
 
   /*
     -----------------------------------------
@@ -781,101 +833,182 @@ function App() {
 
 
   return (
-    <div className="app">
+    <div
+      className="app"
+      data-nav={navTheme}
+      data-motion={motionTheme}
+    >
+      <div className="aurora-orbs" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
 
-      <nav className="toolbar">
+      <div className="app-shell">
 
-        <div className="toolbar-title">
-          Expense Tracker
-        </div>
+        <nav className="toolbar" data-active={activeView}>
 
-        <div className="toolbar-links">
+          <div className="toolbar-brand">
+            <div className="toolbar-mark">₹</div>
+            <div>
+              <div className="toolbar-title">Expense Tracker</div>
+              <span className="toolbar-subtitle">Personal finance</span>
+            </div>
+          </div>
 
-          {navItems.map(
-            ([view, label]) => (
+          <div className="toolbar-section-label">Workspace</div>
 
-              <button
-                key={view}
-                className={
-                  activeView ===
-                  view
-                    ? 'active'
-                    : ''
-                }
-                onClick={() =>
-                  handleViewChange(
-                    view
-                  )
-                }
-              >
-                {label}
-              </button>
+          <div className="toolbar-links">
 
-            )
-          )}
+            {navItems.map(
+              ([view, label]) => (
+                <button
+                  key={view}
+                  type="button"
+                  data-view={view}
+                  className={
+                    activeView === view
+                      ? 'active'
+                      : ''
+                  }
+                  onClick={() =>
+                    handleViewChange(view)
+                  }
+                >
+                  <span className={`nav-icon nav-icon-${view}`}>
+                    {view === 'overview' ? '⌂' : view === 'add-expense' ? '+' : view === 'analytics' ? '◒' : view === 'calendar' ? '□' : view === 'recurring' ? '↻' : view === 'notifications' ? '!' : '⚙'}
+                  </span>
+                  <span>{label}</span>
+                </button>
+              )
+            )}
 
-          <button
-            className="logout-button"
-            onClick={
-              handleLogout
-            }
-          >
-            Logout
-          </button>
+          </div>
 
-        </div>
+          <div className="sidebar-footer">
+            <div className="sidebar-user">
+              <div className="sidebar-user-avatar">
+                {user.name
+                  ? user.name
+                      .split(' ')
+                      .slice(0, 2)
+                      .map((part) => part[0])
+                      .join('')
+                      .toUpperCase()
+                  : 'U'}
+              </div>
+              <div>
+                <strong>{user.name || 'User'}</strong>
+                <span>{user.email || 'Account'}</span>
+              </div>
+            </div>
 
-      </nav>
+            <button
+              className="logout-button"
+              onClick={handleLogout}
+            >
+              Sign out
+            </button>
+          </div>
+
+        </nav>
+
+        <main className="app-main">
 
 
       <header className="app-header">
-
-        <div className="account-summary">
-          <div className="account-avatar">
-            {user.name
-              ? user.name
-                  .split(' ')
-                  .slice(0, 2)
-                  .map((part) => part[0])
-                  .join('')
-                  .toUpperCase()
-              : 'U'}
+        <div className="page-hero">
+          <div className="page-hero-copy">
+            <span className="account-label">
+              {viewCopy.kicker}
+            </span>
+            <h1>{viewCopy.title}</h1>
+            <p>{viewCopy.subtitle}</p>
           </div>
 
-          <div className="account-summary-text">
-            <span className="account-label">
-              Account Details
-            </span>
-
-            <h1>
-              My Expense Tracker
-            </h1>
-
-            <p>
-              Track, manage and understand
-              your spending.
-            </p>
-
-            <div className="account-meta">
-              <span>
-                <strong>Name:</strong>{' '}
-                {user.name || 'User'}
-              </span>
-
-              <span>
-                <strong>Email:</strong>{' '}
-                {user.email || 'Not available'}
-              </span>
+          <div className="page-hero-aside">
+            <div className="hero-chip">
+              <span>Account</span>
+              <strong>{user.name || 'User'}</strong>
+            </div>
+            <div className="hero-chip">
+              <span>Email</span>
+              <strong>{user.email || 'Not available'}</strong>
             </div>
           </div>
         </div>
-
       </header>
 
 
-      {activeView ===
-        'overview' && (
+      <div key={activeView} className="view-container">
+          {activeView === 'overview' && (
         <>
+          <div className="quick-actions-bar">
+            <button type="button" className="quick-action-btn primary" onClick={() => handleViewChange('add-expense')}>
+              <span>+</span> Add Expense
+            </button>
+            <button type="button" className="quick-action-btn" onClick={() => handleViewChange('analytics')}>
+              Analytics
+            </button>
+            <button type="button" className="quick-action-btn" onClick={() => handleViewChange('calendar')}>
+              Calendar
+            </button>
+            <button type="button" className="quick-action-btn" onClick={() => handleViewChange('recurring')}>
+              Recurring
+            </button>
+          </div>
+
+          <div className="summary-grid">
+            <div className="summary-card coral">
+              <div className="summary-card-header">
+                <span>Total Spent</span>
+                <span className="summary-card-icon">₹</span>
+              </div>
+              <div className="summary-card-value">₹{overviewTotalSpent.toFixed(2)}</div>
+              <div className="summary-card-sub">{filteredExpenses.length} transaction{filteredExpenses.length === 1 ? '' : 's'}</div>
+            </div>
+
+            <div className="summary-card blue">
+              <div className="summary-card-header">
+                <span>Monthly Budget</span>
+                <span className="summary-card-icon" style={{ fontSize: '10px', fontWeight: 800 }}>TGT</span>
+              </div>
+              <div className="summary-card-value">
+                {overviewBudget ? `₹${overviewBudget.toFixed(2)}` : 'Not Set'}
+              </div>
+              <div className="summary-card-sub">
+                {selectedMonth ? `Target for ${selectedMonth}` : 'Select a month'}
+              </div>
+            </div>
+
+            <div className="summary-card mint">
+              <div className="summary-card-header">
+                <span>Remaining</span>
+                <span className="summary-card-icon" style={{ fontSize: '10px', fontWeight: 800 }}>REM</span>
+              </div>
+              <div className="summary-card-value">
+                {overviewBudget ? `₹${overviewRemaining.toFixed(2)}` : 'N/A'}
+              </div>
+              <div className={`summary-card-sub ${overviewRemaining >= 0 ? 'positive' : 'negative'}`}>
+                {overviewBudget
+                  ? overviewRemaining >= 0
+                    ? 'Within budget limit'
+                    : 'Over budget limit'
+                  : 'Set budget in Add Expense'}
+              </div>
+            </div>
+
+            <div className="summary-card amber">
+              <div className="summary-card-header">
+                <span>Top Category</span>
+                <span className="summary-card-icon" style={{ fontSize: '10px', fontWeight: 800 }}>TOP</span>
+              </div>
+              <div className="summary-card-value" style={{ textTransform: 'capitalize' }}>
+                {overviewTopCategory}
+              </div>
+              <div className="summary-card-sub">Highest spending category</div>
+            </div>
+          </div>
 
           <section className="card filters">
 
@@ -1004,14 +1137,16 @@ function App() {
             </div>
 
 
-            <button
-              className="secondary-button"
-              onClick={
-                clearFilters
-              }
-            >
-              Clear Filters
-            </button>
+            <div className="filter-actions">
+              <button
+                className="secondary-button"
+                onClick={
+                  clearFilters
+                }
+              >
+                Clear Filters
+              </button>
+            </div>
 
           </section>
 
@@ -1038,146 +1173,73 @@ function App() {
       )}
 
 
-      {activeView ===
-        'add-expense' && (
-        <>
-
+          {activeView === 'add-expense' && (
+        <div className="two-column-card-grid">
           <section className="card">
-
             <div className="section-heading">
-
               <div>
-
-                <h2>
-                  Monthly Budget
-                </h2>
-
-                <p>
-                  Set a budget for
-                  the selected month.
-                </p>
-
+                <h2>Monthly Budget</h2>
+                <p>Set a spending budget target for the selected month.</p>
               </div>
-
             </div>
 
-
-            <div className="budget-input-row">
-
+            <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: '16px' }}>
               <div className="field">
-
-                <label>
-                  Month & Year
+                <label className="field-label">
+                  <span>Month & Year</span>
+                  <span className="field-required">*</span>
                 </label>
-
                 <div className="two-inputs">
-
                   <select
-                    value={
-                      selectedMonthPart
-                    }
-                    onChange={(e) =>
-                      setSelectedMonthPart(
-                        e.target.value
-                      )
-                    }
+                    value={selectedMonthPart}
+                    onChange={(e) => setSelectedMonthPart(e.target.value)}
                   >
-
-                    <option value="">
-                      Month
-                    </option>
-
-                    {months.map(
-                      ([
-                        value,
-                        label
-                      ]) => (
-                        <option
-                          key={
-                            value
-                          }
-                          value={
-                            value
-                          }
-                        >
-                          {label}
-                        </option>
-                      )
-                    )}
-
+                    <option value="">Month</option>
+                    {months.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
                   </select>
 
-
                   <select
-                    value={
-                      selectedYearPart
-                    }
-                    onChange={(e) =>
-                      setSelectedYearPart(
-                        e.target.value
-                      )
-                    }
+                    value={selectedYearPart}
+                    onChange={(e) => setSelectedYearPart(e.target.value)}
                   >
-
-                    <option value="">
-                      Year
-                    </option>
-
-                    {yearOptions.map(
-                      (year) => (
-                        <option
-                          key={
-                            year
-                          }
-                          value={
-                            year
-                          }
-                        >
-                          {year}
-                        </option>
-                      )
-                    )}
-
+                    <option value="">Year</option>
+                    {yearOptions.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
                   </select>
-
                 </div>
-
               </div>
 
-
               <div className="field">
-
-                <label>
-                  Budget
+                <label className="field-label">
+                  <span>Target Budget</span>
                 </label>
-
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder={
-                    selectedMonth
-                      ? 'Enter monthly budget'
-                      : 'Select month first'
-                  }
-                  value={budgetDraft}
-                  disabled={!selectedMonth}
-                  onChange={(e) =>
-                    setBudgetDraft(
-                      e.target.value
-                    )
-                  }
-                />
-
+                <div className="input-group">
+                  <span className="input-prefix">₹</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder={selectedMonth ? '0.00' : 'Select month first'}
+                    value={budgetDraft}
+                    disabled={!selectedMonth}
+                    onChange={(e) => setBudgetDraft(e.target.value)}
+                  />
+                </div>
               </div>
 
               {selectedMonth && (
-                <div className="button-wrap budget-actions">
+                <div className="button-wrap budget-actions" style={{ marginTop: '8px' }}>
                   <button
+                    type="button"
                     className="primary-button small"
-                    onClick={() =>
-                      setCurrentBudget(budgetDraft)
-                    }
+                    onClick={() => setCurrentBudget(budgetDraft)}
                     disabled={!selectedMonth}
                   >
                     Save Budget
@@ -1185,6 +1247,7 @@ function App() {
 
                   {currentBudget !== '' && (
                     <button
+                      type="button"
                       className="danger-button small budget-clear"
                       onClick={clearCurrentBudget}
                     >
@@ -1193,32 +1256,20 @@ function App() {
                   )}
                 </div>
               )}
-
             </div>
-
           </section>
 
-
           <ExpenseForm
-            expenses={
-              expenses
-            }
-            setExpenses={
-              setExpenses
-            }
-            selectedMonth={
-              selectedMonth
-            }
-            categories={
-              categories
-            }
+            expenses={expenses}
+            setExpenses={setExpenses}
+            selectedMonth={selectedMonth}
+            categories={categories}
           />
-
-        </>
+        </div>
       )}
 
 
-      {activeView ===
+          {activeView ===
         'analytics' && (
 
         <Analytics
@@ -1236,7 +1287,7 @@ function App() {
       )}
 
 
-      {activeView ===
+          {activeView ===
         'calendar' && (
 
         <CalendarView
@@ -1251,7 +1302,7 @@ function App() {
       )}
 
 
-      {activeView ===
+          {activeView ===
         'recurring' && (
 
         <RecurringExpenses
@@ -1275,7 +1326,7 @@ function App() {
       )}
 
 
-      {activeView ===
+          {activeView ===
         'notifications' && (
 
         <Notifications
@@ -1293,7 +1344,7 @@ function App() {
       )}
 
 
-      {activeView ===
+          {activeView ===
         'settings' && (
 
         <Settings
@@ -1342,12 +1393,92 @@ function App() {
           setTheme={
             setTheme
           }
+          navTheme={navTheme}
+          setNavTheme={setNavTheme}
+          motionTheme={motionTheme}
+          setMotionTheme={setMotionTheme}
           onLogout={
             handleLogout
           }
         />
 
       )}
+      </div>
+
+        </main>
+
+      </div>
+
+      <nav className="mobile-dock" aria-label="Primary">
+        {navItems.map(([view, label]) => (
+          <button
+            key={view}
+            type="button"
+            className={activeView === view ? 'active' : ''}
+            onClick={() => handleViewChange(view)}
+          >
+            <span className="nav-icon">
+              {view === 'overview' ? '⌂' : view === 'add-expense' ? '+' : view === 'analytics' ? '◒' : view === 'calendar' ? '□' : view === 'recurring' ? '↻' : view === 'notifications' ? '!' : '⚙'}
+            </span>
+            <span>{label.replace(/ \(\d+\)$/, '')}</span>
+          </button>
+        ))}
+      </nav>
+
+      <div className="ai-assistant-dock">
+
+        {aiOpen && (
+          <div className="ai-assistant-popover">
+            <div className="ai-popover-heading">
+              <div>
+                <span className="ai-popover-eyebrow">Your money sidekick</span>
+                <strong>Ask the assistant</strong>
+              </div>
+
+              <button
+                className="ai-close-button"
+                type="button"
+                aria-label="Close AI assistant"
+                onClick={() => setAiOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <AIChat
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYearPart}
+            budget={overviewBudget}
+            totalSpent={overviewTotalSpent}
+            remaining={overviewRemaining}
+            topCategory={overviewTopCategory}
+            expenseCount={filteredExpenses.length}
+            expenseSummary={{
+              totalSpent: overviewTotalSpent,
+              budget: overviewBudget,
+              remaining: overviewRemaining,
+              topCategory: overviewTopCategory,
+              count: filteredExpenses.length,
+              month: selectedMonth || `${selectedYearPart || new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
+            }}
+            expenses={filteredExpenses}
+          />
+          </div>
+        )}
+
+        <button
+          className={`ai-fab ${aiOpen ? 'is-open' : ''}`}
+          type="button"
+          aria-expanded={aiOpen}
+          aria-label={aiOpen ? 'Close AI assistant' : 'Open AI assistant'}
+          title={aiOpen ? 'Close AI assistant' : 'Ask your money sidekick'}
+          onClick={() => setAiOpen((open) => !open)}
+        >
+          <span className="ai-fab-icon">✦</span>
+          <span className="ai-fab-label">Ask AI</span>
+        </button>
+
+      </div>
 
     </div>
   )

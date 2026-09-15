@@ -11,7 +11,6 @@ function Notifications({ notifications, dismissNotification, clearNotifications 
 
       {notifications.length === 0 ? (
         <div className="empty-state compact">
-          <div className="empty-icon">🔔</div>
           <h3>No notifications</h3>
           <p>You are all caught up.</p>
         </div>

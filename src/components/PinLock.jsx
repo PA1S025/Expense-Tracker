@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { hashPin } from '../utils'
 
 function PinLock({ pinHash, onUnlock }) {
   const [pin, setPin] = useState('')
@@ -6,29 +7,30 @@ function PinLock({ pinHash, onUnlock }) {
 
   const submit = async (event) => {
     event.preventDefault()
-    if (!/^\d{4,6}$/.test(pin)) return setError('Enter your 4–6 digit PIN.')
+    if (!/^\d{4,6}$/.test(pin)) {
+      setError('Enter your 4–6 digit PIN.')
+      return
+    }
 
-    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin))
-    const value = Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('')
-
-    if (value === pinHash) {
+    if (await hashPin(pin) === pinHash) {
       setError('')
       setPin('')
       onUnlock()
-    } else {
-      setPin('')
-      setError('Incorrect PIN.')
+      return
     }
+
+    setPin('')
+    setError('Incorrect PIN.')
   }
 
   return (
     <div className="lock-screen">
       <form className="lock-card" onSubmit={submit}>
-        <div className="lock-icon">🔐</div>
+        <span className="account-label" style={{ marginBottom: '12px' }}>Security Lock</span>
         <h1>Expense Tracker Locked</h1>
         <p>Enter your PIN to continue.</p>
         <input autoFocus inputMode="numeric" type="password" maxLength="6" value={pin}
-          onChange={(e) => setPin(e.target.value.replace(/\D/g,''))} placeholder="PIN" />
+          onChange={(event) => setPin(event.target.value.replace(/\D/g, ''))} placeholder="PIN" />
         {error && <div className="form-error">{error}</div>}
         <button className="primary-button" type="submit">Unlock</button>
       </form>

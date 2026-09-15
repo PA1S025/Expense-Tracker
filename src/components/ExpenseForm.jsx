@@ -80,47 +80,93 @@ function ExpenseForm({
 
       <form className="form-grid" onSubmit={handleSubmit}>
         <div className="field">
-          <label>Amount</label>
-          <input type="number" min="0.01" step="0.01" placeholder="Enter amount" value={amount}
-            onChange={(e) => setAmount(e.target.value)} />
+          <label className="field-label">
+            <span>Amount</span>
+            <span className="field-required">*</span>
+          </label>
+          <div className="input-group">
+            <span className="input-prefix">₹</span>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="field">
-          <label>Category</label>
+          <label className="field-label">
+            <span>Category</span>
+            <span className="field-required">*</span>
+          </label>
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">Select category</option>
-            {categories.map((item) => <option key={item} value={item}>{item}</option>)}
+            {categories.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="field">
-          <label>Description</label>
-          <input type="text" placeholder="What did you spend on?" value={description}
-            onChange={(e) => setDescription(e.target.value)} />
+          <label className="field-label">
+            <span>Description</span>
+            <span className="field-required">*</span>
+          </label>
+          <input
+            type="text"
+            placeholder="What did you spend on?"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
         </div>
 
         <div className="field">
-          <label>Date</label>
-          <input type="date" value={date} min={selectedMonth ? `${selectedMonth}-01` : undefined}
-            max={getLastDayOfMonth()} disabled={!selectedMonth}
-            onChange={(e) => setDate(e.target.value)} />
+          <label className="field-label">
+            <span>Date</span>
+            <span className="field-required">*</span>
+          </label>
+          <input
+            type="date"
+            value={date}
+            min={selectedMonth ? `${selectedMonth}-01` : undefined}
+            max={getLastDayOfMonth()}
+            disabled={!selectedMonth}
+            onChange={(e) => setDate(e.target.value)}
+          />
         </div>
 
         <div className="field">
-          <label>Payment Method</label>
+          <label className="field-label">
+            <span>Payment Method</span>
+          </label>
           <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
-            {PAYMENT_METHODS.map((method) => <option key={method}>{method}</option>)}
+            {PAYMENT_METHODS.map((method) => (
+              <option key={method}>{method}</option>
+            ))}
           </select>
         </div>
 
-        <div className="field field-full">
-          <label>Notes <span className="muted">(optional)</span></label>
-          <textarea rows="3" placeholder="Add any extra details..." value={notes}
-            onChange={(e) => setNotes(e.target.value)} />
+        <div className="field">
+          <label className="field-label">
+            <span>Notes <span className="muted">(optional)</span></span>
+          </label>
+          <input
+            type="text"
+            placeholder="Add extra details..."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </div>
 
-        <div className="field field-full">
-          <button className="primary-button" type="submit">Add Expense</button>
+        <div className="field field-full" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+          <button className="primary-button" type="submit">
+            <span>+</span> Add Expense
+          </button>
         </div>
       </form>
     </section>
